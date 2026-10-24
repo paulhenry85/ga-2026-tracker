@@ -252,7 +252,7 @@
       <h2>Early vote and mail ballots</h2>
       <ul class="tx-notes">
         <li>This tracks turnout only; Georgia has no party registration</li>
-        <li>Comparisons line up with the same day in 2022 and 2024</li>
+        <li>Comparisons line up with the same number of days before Election Day in 2022 and 2024; 2022 early voting opened a day earlier, so its first two days count against 2026's day 1</li>
         <li>Day 1 in every year includes mail ballots received before early voting opened</li>
         <li>Early voting runs October 13 to 30; mail ballots count until polls close on Election Day</li>
         <li>Data is updated as it becomes available</li>
@@ -299,7 +299,7 @@
 </div>
 
 <script>
-const EVD = 19; // longest early vote window being compared (2022 ran 19 days)
+const EVD = 18; // early voting days in 2026 (13 to 30 Oct); 2022 and 2024 line up by days before Election Day
 
 const txControl = (rows, base) => {
   // base: seats not on the ballot this year {D, R}; rows: seats up.
@@ -334,7 +334,7 @@ dash.calc('chamber_house', {
   const pct = (v) => (v == null || v === '' ? '—' : Number(v).toFixed(1) + '%');
   const sgn = (v) => (v == null || v === '' ? '—' : (Number(v) > 0 ? 'D+' : Number(v) < 0 ? 'R+' : '') + Math.abs(Number(v)).toFixed(1));
   const presTxt = (m) => (m == null || m === '' ? '—' : (Number(m) > 0 ? 'Trump +' : 'Harris +') + Math.abs(Number(m)).toFixed(1));
-  const last = (n) => String(n || '').split(' ').filter((w) => !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(w)).slice(-1)[0] || '';
+  const last = (n) => String(n || '').replace(/,/g, ' ').split(/\s+/).filter((w) => w && !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(w)).slice(-1)[0] || '';
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const state = (r) => r.status === 'Called' ? (r.leader === 'D' ? 'won-d' : 'won-r') : (r.status === 'Counting' || r.status === 'Too close to call' ? 'counting' : '');
   const shortStatus = (r) => {
@@ -420,7 +420,7 @@ dash.calc('chamber_house', {
     const st = c.status === 'ok' ? c.data.find((r) => r.county === 'STATEWIDE') : null;
     const latestDay = st ? Number(st.day) : null;
     // 2026 statewide by day
-    const days26 = (dd.status === 'ok' ? dd.data : []).filter((r) => r.total != null).map((r) => ({ day: Number(r.day), date: r.date, in_person: Number(r.in_person) || 0, mail: Number(r.mail) || 0, total: Number(r.total), partial: !!r.partial, posted: r.counties_posted })).sort((a, b) => a.day - b.day);
+    const days26 = (dd.status === 'ok' ? dd.data : []).filter((r) => r.total != null).map((r) => ({ day: Number(r.day), date: r.date, in_person: Number(r.in_person) || 0, mail: Number(r.mail) || 0, total: Number(r.total), split: r.mail != null && r.in_person != null, partial: !!r.partial, posted: r.counties_posted })).sort((a, b) => a.day - b.day);
     const avail = days26.map((d) => d.day);
     // default to the most recent day that has new ballots counted (skip a day the state has opened but not filled)
     const withNew = days26.filter((d, i) => i === 0 || d.total > days26[i - 1].total).map((d) => d.day);
@@ -449,7 +449,7 @@ dash.calc('chamber_house', {
     const chg = (r, yr) => { const b = hval(yr, r.county, D); if (!r.ok || !b || !b.total || r.total == null) return null; const [x, y] = cmpPair(r, b); if (x == null || !y) return null; return (x - y) / y * 100; };
     const nMM = okRows.filter((r) => r.mm).length;
     // statewide for day D
-    const sw = (() => { const a = days26.find((x) => x.day === D); if (!a) return null; if (!daily) return a; const p = days26.find((x) => x.day === D - 1); if (D > 1 && !p) return null; return { ...a, total: a.total - (p ? p.total : 0), in_person: a.in_person - (p ? p.in_person : 0), mail: a.mail - (p ? p.mail : 0) }; })();
+    const sw = (() => { const a = days26.find((x) => x.day === D); if (!a) return null; if (!daily) return a; const p = days26.find((x) => x.day === D - 1); if (D > 1 && !p) return null; return { ...a, split: a.split && (!p || p.split), total: a.total - (p ? p.total : 0), in_person: a.in_person - (p ? p.in_person : 0), mail: a.mail - (p ? p.mail : 0) }; })();
     const swchg = (yr) => { if (isPartial || nMM) { const x = repChg(yr); return x ? x.p : null; } const b = hval(yr, 'STATEWIDE', D); return sw && b && b.total ? (sw.total - b.total) / b.total * 100 : null; };
     const dateLbl = (() => { const a = days26.find((x) => x.day === D); return a ? 'day ' + D + ', ' + new Date(a.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'; })();
     const mlbl = daily ? 'Day ' + D + ' alone' : 'Through day ' + D;
@@ -457,16 +457,16 @@ dash.calc('chamber_house', {
     const reg = st ? Number(st.registered) : null;
     const b22 = hval(2022, 'STATEWIDE', D), b24 = hval(2024, 'STATEWIDE', D);
     tiles.replaceChildren(
-      evTile(mlbl + ': ballots (at least)', sw ? n(sw.total) : '—'),
-      evTile(daily ? 'In person, mail' : 'Turnout of registered voters', daily ? (sw ? n(sw.in_person) + ', ' + n(sw.mail) : '—') : (sw && reg ? pct(sw.total / reg * 100) : '—')),
+      evTile(mlbl + ': ballots', sw ? n(sw.total) : '—'),
+      evTile(daily ? 'In person, mail' : 'Turnout of registered voters', daily ? (sw && sw.split ? n(sw.in_person) + ', ' + n(sw.mail) : '—') : (sw && reg ? pct(sw.total / reg * 100) : '—')),
       evTile(isPartial ? 'vs 2022, same day (' + (repChg(2022) || { n: 0 }).n + ' counties posted)' : 'vs 2022, same day', sgn(swchg(2022)) + (!isPartial && !nMM && b22 ? ' (' + num(b22.total) + ')' : '')),
       evTile(isPartial ? 'vs 2024, same day (' + (repChg(2024) || { n: 0 }).n + ' counties posted)' : 'vs 2024, same day', sgn(swchg(2024)) + (!isPartial && !nMM && b24 ? ' (' + num(b24.total) + ')' : '')),
       evTile('Showing', dateLbl + (isPartial ? ', state still posting' : '') + (D !== latestDay ? ' (latest: day ' + latestDay + ')' : '')));
     // statewide by-day table (12 rows)
-    const series = (yr) => { const out = {}; for (let i = 1; i <= 12; i++) { const v = hval(yr, 'STATEWIDE', i); if (v) out[i] = v.total; } return out; };
+    const series = (yr) => { const out = {}; for (let i = 1; i <= EVD; i++) { const v = hval(yr, 'STATEWIDE', i); if (v) out[i] = v.total; } return out; };
     const s22 = series(2022), s24 = series(2024);
     const s26 = {}; days26.forEach((d) => { const p = days26.find((x) => x.day === d.day - 1); s26[d.day] = daily ? (d.day === 1 ? d.total : p ? d.total - p.total : null) : d.total; });
-    const d26 = (i) => { const a = days26.find((x) => x.day === i); if (a) return new Date(a.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); const t = new Date(2026, 9, 18 + i); return t.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); };
+    const d26 = (i) => { const a = days26.find((x) => x.day === i); if (a) return new Date(a.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); const t = new Date(2026, 9, 12 + i); return t.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); };
     dtb.replaceChildren(...d3.range(1, EVD + 1).map((i) => { const tr = el('tr'); if (i === D) tr.style.background = 'rgba(242,196,109,0.14)'; const v = s26[i]; const pr = !!(days26.find((x) => x.day === i) || {}).partial; const cmp = (b) => (v != null && b && !pr ? sgn((v - b) / b * 100) : (pr ? 'posting' : '—')); tr.append(el('td', 'dist', 'Day ' + i), el('td', null, d26(i) + (pr ? ' (partial)' : '')), el('td', 'r', n(v)), el('td', 'r muted', n(s22[i])), el('td', 'r muted', n(s24[i])), el('td', 'r', cmp(s22[i])), el('td', 'r', cmp(s24[i]))); return tr; }));
     document.getElementById('ev-chart-h').textContent = (daily ? 'Ballots cast each day' : 'Cumulative ballots') + ' by day of early voting, against 2022 and 2024';
     // county table
@@ -485,7 +485,7 @@ dash.calc('chamber_house', {
     chart.replaceChildren();
     const line = (yr) => d3.range(1, EVD + 1).map((i) => ({ day: i, total: (yr === 2022 ? s22 : s24)[i] })).filter((d) => d.total != null);
     const l22 = line(2022), l24 = line(2024);
-    const cur = days26.map((d) => { const p = days26.find((x) => x.day === d.day - 1); if (!daily) return d; if (d.day > 1 && !p) return null; return { ...d, total: d.total - (p ? p.total : 0), mail: d.mail - (p ? p.mail : 0), in_person: d.in_person - (p ? p.in_person : 0) }; }).filter(Boolean);
+    const cur = days26.map((d) => { const p = days26.find((x) => x.day === d.day - 1); if (!daily) return d; if (d.day > 1 && !p) return null; return { ...d, split: d.split && (!p || p.split), total: d.total - (p ? p.total : 0), mail: d.mail - (p ? p.mail : 0), in_person: d.in_person - (p ? p.in_person : 0) }; }).filter(Boolean);
     const W = chart.clientWidth - 24, H = 240, m = { t: 12, r: 12, b: 26, l: 12 };
     const fmtY = d3.format('.2s'); const dayList = d3.range(1, EVD + 1);
     const x = d3.scaleBand(dayList, [0, 1]).padding(0.25);
@@ -498,8 +498,8 @@ dash.calc('chamber_house', {
     ticks.forEach((t) => { svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(t)).attr('y2', y(t)).attr('stroke', 'rgba(200,210,255,0.14)'); svg.append('text').attr('x', m.l - 6).attr('y', y(t) + 4).attr('text-anchor', 'end').attr('font-size', 11).attr('fill', '#9AA6C8').text(fmtY(t)); });
     svg.append('rect').attr('x', x(D) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', m.t).attr('height', H - m.t - m.b).attr('fill', 'rgba(242,196,109,0.14)');
     const g = svg.selectAll('g.bar').data(cur).enter().append('g').attr('opacity', (d) => (d.partial ? 0.4 : 1));
-    g.append('rect').attr('x', (d) => x(d.day)).attr('width', x.bandwidth()).attr('y', (d) => y(Math.max(0, d.total - d.mail))).attr('height', (d) => y(0) - y(Math.max(0, d.total - d.mail))).attr('fill', '#F2C46D').attr('rx', 2);
-    g.append('rect').attr('x', (d) => x(d.day)).attr('width', x.bandwidth()).attr('y', (d) => y(d.total)).attr('height', (d) => Math.max(0, y(Math.max(0, d.total - d.mail)) - y(d.total))).attr('fill', '#9C8CFF').attr('rx', 2);
+    g.append('rect').attr('x', (d) => x(d.day)).attr('width', x.bandwidth()).attr('y', (d) => y(Math.max(0, d.split ? d.total - d.mail : d.total))).attr('height', (d) => y(0) - y(Math.max(0, d.split ? d.total - d.mail : d.total))).attr('fill', (d) => (d.split ? '#F2C46D' : '#C9A85A')).attr('rx', 2);
+    g.append('rect').attr('x', (d) => x(d.day)).attr('width', x.bandwidth()).attr('y', (d) => y(d.total)).attr('height', (d) => (d.split ? Math.max(0, y(Math.max(0, d.total - d.mail)) - y(d.total)) : 0)).attr('fill', '#9C8CFF').attr('rx', 2);
     const cx = (d) => x(d.day) + x.bandwidth() / 2;
     const drawLine = (pts, color, dash) => { if (!pts.length) return; svg.append('path').attr('d', d3.line().x(cx).y((d) => y(d.total))(pts)).attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2).attr('stroke-dasharray', dash || null); svg.selectAll(null).data(pts).enter().append('circle').attr('cx', cx).attr('cy', (d) => y(d.total)).attr('r', 2.5).attr('fill', color); };
     drawLine(l22, '#9AA6C8', '5 3'); drawLine(l24, '#E8ECFF');
@@ -511,7 +511,7 @@ dash.calc('chamber_house', {
       .on('mouseleave', () => { tip.hidden = true; });
     const lg = el('div', 'tx-legend'); const it = (cc, t) => { const sp = el('span'); const i = el('i'); i.style.background = cc; sp.append(i, document.createTextNode(t)); return sp; };
     const ln = (cc, t, dash) => { const sp = el('span'); const i = el('i'); i.style.cssText = 'background:none;height:0;align-self:center;border-top:2px ' + (dash ? 'dashed ' : 'solid ') + cc; sp.append(i, document.createTextNode(t)); return sp; };
-    lg.append(it('#F2C46D', '2026 in person'), it('#9C8CFF', '2026 mail'), ln('#9AA6C8', '2022', true), ln('#E8ECFF', '2024')); chart.append(lg);
+    lg.append(it('#F2C46D', '2026 in person'), it('#9C8CFF', '2026 mail'), ...(cur.some((d) => !d.split) ? [it('#C9A85A', '2026 all ballots (split by method not yet available)')] : []), ln('#9AA6C8', '2022', true), ln('#E8ECFF', '2024')); chart.append(lg);
   };
   const q = document.getElementById('house-q');
   q.addEventListener('input', () => { filt.q = q.value.trim().toLowerCase(); draw(); });
