@@ -29,6 +29,8 @@ for k in range(1, last_day + 1):
         src = ovr.get((k, name)) or (prev.get((k, name)) if k != last_day else None)
         if k == last_day and c['mail'] is not None: row.update(in_person=c['in_person'], mail=c['mail'], total=c['total'])
         elif src and src.get('total') == t: row.update(in_person=src['in_person'], mail=src['mail'])
+        elif src and t is not None and src.get('mail') is not None and abs((src.get('total') or 0) - t) <= 5 and t >= src['mail']:
+            row.update(in_person=t - src['mail'], mail=src['mail'])  # state file count within a few ballots of Georgia Votes: keep its mail count
         cd.append(row)
         tot += t or 0
         if row['mail'] is None: split = False
