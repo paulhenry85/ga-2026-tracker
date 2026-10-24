@@ -1,0 +1,569 @@
+<style>
+/* Georgia 2026 tracker: page, Democratic blue, Republican red. Night-sky look in every theme. */
+#dash-root { --dash-gutter: 0; }
+.tx { color-scheme: light;
+  --tx-page: #F7F5F0; --tx-ink: #1B2430; --tx-d: #1F5FBF; --tx-r: #C0352B; --tx-o: #7A6F5A;
+  --tx-surface: #FFFFFF; --tx-track: #E7E2D6; --tx-d-tint: #DCE7F7; --tx-r-tint: #F6DDDA; --tx-accent: #8C5A2B;
+  --color-fg: #1B2430; --color-fg-muted: #5D6673; --color-panel: #FFFFFF; --color-border-line: #E2DDD0; --color-warn: #9A5B00;
+  background: var(--tx-page); color: var(--tx-ink);
+  padding-block: var(--cds-pad-lg) var(--cds-pad-xl);
+  padding-left: max(16px, 3vw); padding-right: max(16px, 3vw);
+  font-family: var(--font-anthropic-sans); display: grid; gap: var(--cds-gap-lg); min-height: 100%; }
+.tx-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--cds-gap-xs) var(--cds-gap-lg); }
+.tx-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; }
+.tx-head h1 span { color: var(--tx-accent); }
+.tx-meta { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.tx-tabs { display: flex; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); flex-wrap: wrap; }
+.tx-tabs button { font: inherit; font-size: var(--cds-font-size-body); background: none; border: 0; border-bottom: 2px solid transparent; color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-md); cursor: pointer; margin-bottom: -1px; }
+.tx-tabs button[aria-selected="true"] { color: var(--tx-ink); border-bottom-color: var(--tx-accent); font-weight: var(--cds-font-weight-medium); }
+.tx-tabs button:focus-visible, .tx-tools input:focus-visible, .tx-tools button:focus-visible { outline: 2px solid var(--tx-accent); outline-offset: 2px; }
+.tx-page { display: grid; gap: var(--cds-gap-lg); }
+.tx-sec { display: grid; gap: var(--cds-gap-sm); }
+.tx-sec > h2 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+.tx-sec > p { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); max-width: 80ch; }
+
+/* Chamber control */
+.tx-control { background: var(--tx-surface); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); display: grid; gap: var(--cds-gap-sm); }
+.tx-control .nums { display: flex; justify-content: space-between; align-items: baseline; gap: var(--cds-gap-md); flex-wrap: wrap; }
+.tx-control .big { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; line-height: 1; }
+.tx-control .big.d { color: var(--tx-d); } .tx-control .big.r { color: var(--tx-r); }
+.tx-control .lbl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.tx-seatbar { position: relative; display: flex; height: 1.1rem; border-radius: 4px; overflow: hidden; background: var(--tx-track); }
+.tx-seatbar span { display: block; height: 100%; }
+.tx-seatbar .dw { background: var(--tx-d); } .tx-seatbar .dl { background: #3F6DB5; }
+.tx-seatbar .rl { background: #A84A44; margin-left: auto; } .tx-seatbar .rw { background: var(--tx-r); }
+.tx-seatbar .mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: var(--tx-ink); }
+.tx-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+.tx-legend i { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 2px; margin-right: 0.3rem; vertical-align: -1px; }
+
+/* Tiles */
+.tx-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr)); gap: var(--cds-gap-sm); }
+.tx-board.wide { grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); }
+.tx-t { background: var(--tx-surface); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); display: grid; gap: 0.3rem; min-width: 0; text-decoration: none; color: inherit; }
+.tx-t.won-d { background: var(--tx-d-tint); border-color: var(--tx-d); }
+.tx-t.won-r { background: var(--tx-r-tint); border-color: var(--tx-r); }
+.tx-t .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: var(--cds-gap-xs); min-width: 0; }
+.tx-t .d { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-t .st { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); white-space: nowrap; }
+.tx-t .st.counting { color: var(--color-warn); }
+.tx-t .st.won-d { color: var(--tx-d); font-weight: 600; } .tx-t .st.won-r { color: var(--tx-r); font-weight: 600; }
+.tx-t .names { display: flex; justify-content: space-between; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-caption); min-width: 0; }
+.tx-t .names span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-t .nums { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.tx-t .nums .dv { color: var(--tx-d); } .tx-t .nums .rv { color: var(--tx-r); }
+.tx-t .sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.tx-mini { display: flex; height: 0.35rem; border-radius: 999px; overflow: hidden; background: var(--tx-track); }
+.tx-mini span { display: block; height: 100%; }
+.tx-mini .dv { background: var(--tx-d); } .tx-mini .rv { background: var(--tx-r); margin-left: auto; }
+.w-d::after, .w-r::after { font-weight: 700; margin-left: 0.3em; }
+.w-d::after { content: "\2713"; color: var(--tx-d); }
+.w-r::after { content: "\2713"; color: var(--tx-r); }
+
+/* Tools and tables */
+.tx-evbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-md); margin: var(--cds-gap-sm) 0 var(--cds-gap-md); }
+.tx-evbar .tx-seg { margin: 0; }
+#ev-table.daily th:nth-child(5), #ev-table.daily td:nth-child(5) { display: none; }
+.tx-daypick { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.tx-daypick .lbl { font-weight: 600; color: var(--tx-ink); margin-right: 0.2rem; }
+.tx-daypick button { font: inherit; font-size: 0.9rem; padding: 0.4rem 0.8rem; border: 1px solid var(--tx-accent); border-radius: 999px; background: #fff; color: var(--tx-accent); cursor: pointer; }
+.tx-daypick button[aria-pressed="true"] { background: var(--tx-accent); color: #fff; font-weight: 600; }
+.tx-seg { display: inline-flex; margin: 0 0 var(--cds-gap-md); border: 2px solid var(--tx-accent); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.tx-seg button { font: inherit; font-size: 1rem; font-weight: 600; padding: 0.55rem 1.4rem; border: 0; background: #fff; color: var(--tx-accent); cursor: pointer; }
+.tx-seg button + button { border-left: 2px solid var(--tx-accent); }
+.tx-seg button[aria-pressed="true"] { background: var(--tx-accent); color: #fff; }
+.tx-seg button:hover:not([aria-pressed="true"]) { background: #F3EBE2; }
+.tx-seg button:focus-visible { outline: 3px solid var(--tx-ink); outline-offset: -3px; }
+.tx-tools { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; font-size: var(--cds-font-size-caption); }
+.tx-tools input[type=search] { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--color-border-line); border-radius: 6px; background: #fff; color: var(--tx-ink); min-width: 12rem; }
+.tx-tools button { font: inherit; padding: 0.3rem 0.7rem; border: 1px solid var(--color-border-line); border-radius: 999px; background: #fff; color: var(--tx-ink); cursor: pointer; }
+.tx-tools button[aria-pressed="true"] { background: var(--tx-ink); color: #fff; border-color: var(--tx-ink); }
+.tx-card { background: var(--tx-surface); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); overflow-x: auto; }
+.tx-tbl { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
+.tx-tbl th { text-align: left; font-weight: var(--cds-font-weight-medium); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; position: sticky; top: 0; background: var(--tx-surface); }
+.tx-tbl td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+.tx-tbl tr:last-child td { border-bottom: 0; }
+.tx-tbl .r { text-align: right; }
+#ev-table th { white-space: normal; vertical-align: bottom; line-height: 1.25; }
+.tx-tbl td.dist { font-weight: 600; white-space: nowrap; }
+.tx-tbl td.dv { color: var(--tx-d); } .tx-tbl td.rv { color: var(--tx-r); }
+.tx-tbl td.muted { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.tx-scroll { max-height: 70vh; overflow: auto; }
+.tx-pill { display: inline-block; font-size: var(--cds-font-size-caption); padding: 0.05rem 0.5rem; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); white-space: nowrap; }
+.tx-pill.counting { color: var(--color-warn); border-color: currentColor; }
+.tx-pill.won-d { color: var(--tx-d); border-color: currentColor; font-weight: 600; }
+.tx-pill.won-r { color: var(--tx-r); border-color: currentColor; font-weight: 600; }
+.tx-empty { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); padding: var(--cds-pad-md) 0; }
+.tx-evtiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: var(--cds-gap-sm); }
+.tx-evtile { background: var(--tx-surface); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); display: grid; gap: 0.2rem; }
+.tx-evtile .lbl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.tx-evtile .num { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.tx-tip { position: absolute; pointer-events: none; background: #fff; border: 1px solid var(--color-border-line); border-radius: 6px; padding: 0.3rem 0.5rem; font-size: var(--cds-font-size-caption); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+@media (max-width: 52rem) { .tx-tbl .wide { display: none; } }
+[data-dash-source-state=refreshing] { opacity: .55; transition: opacity var(--cds-dur-slow); }
+.tx-notes { margin: 4px 0 12px; padding-left: 18px; color: var(--tx-o, #7A6F5A); font-size: 13px; line-height: 1.5; }
+
+/* Night-sky theme */
+.tx { color-scheme: dark;
+  --tx-page: #0A0F24; --tx-ink: #E8ECFF; --tx-d: #6FA8FF; --tx-r: #FF6F61; --tx-o: #AEB8D8;
+  --tx-surface: rgba(18, 26, 58, 0.78); --tx-track: rgba(200, 210, 255, 0.14); --tx-d-tint: rgba(111, 168, 255, 0.16); --tx-r-tint: rgba(255, 111, 97, 0.16); --tx-accent: #F2C46D;
+  --color-fg: #E8ECFF; --color-fg-muted: #9AA6C8; --color-panel: rgba(18, 26, 58, 0.78); --color-border-line: rgba(160, 178, 255, 0.18); --color-warn: #FFB84D;
+  background-color: #0A0F24;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,.9) 50%, transparent 52%),
+    radial-gradient(1px 1px at 68% 7%, rgba(255,255,255,.8) 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 83% 42%, rgba(255,244,214,.95) 50%, transparent 52%),
+    radial-gradient(1px 1px at 37% 63%, rgba(255,255,255,.7) 50%, transparent 52%),
+    radial-gradient(1px 1px at 91% 79%, rgba(214,226,255,.8) 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 24% 88%, rgba(255,255,255,.85) 50%, transparent 52%),
+    radial-gradient(1px 1px at 55% 31%, rgba(255,255,255,.6) 50%, transparent 52%),
+    radial-gradient(1px 1px at 5% 52%, rgba(255,255,255,.65) 50%, transparent 52%),
+    radial-gradient(ellipse 60% 40% at 80% 0%, rgba(110, 80, 200, 0.22), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 0% 100%, rgba(40, 110, 200, 0.18), transparent 70%),
+    linear-gradient(180deg, #0A0F24 0%, #111A3A 55%, #0B1230 100%);
+  background-size: 180px 180px, 240px 240px, 310px 310px, 200px 200px, 270px 270px, 340px 340px, 150px 150px, 220px 220px, 100% 100%, 100% 100%, 100% 100%;
+  background-attachment: fixed; }
+.tx-head h1 { letter-spacing: 0.01em; }
+.tx-head h1 span { color: var(--tx-accent); text-shadow: 0 0 12px rgba(242, 196, 109, 0.45); }
+.tx-tabs button[aria-selected="true"] { color: #FFFFFF; }
+.tx-control, .tx-t, .tx-card, .tx-evtile { box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 6px 24px rgba(0, 0, 0, 0.35); backdrop-filter: blur(2px); }
+.tx-evtile .num, .tx-control .big { color: #FFFFFF; }
+.tx-control .big.d { color: var(--tx-d); } .tx-control .big.r { color: var(--tx-r); }
+.tx-seatbar .mid { background: #FFFFFF; }
+.tx-daypick button, .tx-seg button, .tx-tools input[type=search], .tx-tools button { background: rgba(18, 26, 58, 0.6); }
+.tx-daypick button[aria-pressed="true"], .tx-seg button[aria-pressed="true"] { background: var(--tx-accent); color: #0A0F24; }
+.tx-seg button:hover:not([aria-pressed="true"]) { background: rgba(242, 196, 109, 0.12); }
+.tx-tools button[aria-pressed="true"] { background: #E8ECFF; color: #0A0F24; border-color: #E8ECFF; }
+.tx-tbl th { background: #141C40; }
+.tx-tip { background: #141C40; color: #E8ECFF; box-shadow: 0 4px 16px rgba(0,0,0,.5); }
+.tx-notes { color: var(--tx-o); }
+.tx svg text { fill: #9AA6C8; }
+</style>
+
+<div class="tx">
+  <div class="tx-head">
+    <h1>Georgia <span>2026</span> tracker</h1>
+    <span class="tx-meta" id="tx-updated">—</span>
+  </div>
+  <nav class="tx-tabs" role="tablist" aria-label="Tracker pages">
+    <button id="tab-statewide" role="tab" aria-selected="true">Statewide and U.S. Senate</button>
+    <button id="tab-senate" role="tab" aria-selected="false">Georgia Senate</button>
+    <button id="tab-house" role="tab" aria-selected="false">Georgia House</button>
+    <button id="tab-ev" role="tab" aria-selected="false">Early Vote &amp; Mail</button>
+  </nav>
+
+  <div class="tx-page" id="page-statewide" role="tabpanel">
+    <section class="tx-sec">
+      <h2>U.S. Senate and statewide offices</h2>
+      <div class="tx-board wide" id="sw-board" data-source="statewide"></div>
+    </section>
+    <section class="tx-sec">
+      <h2>All statewide races</h2>
+      <div class="tx-card">
+        <table class="tx-tbl" id="sw-table" data-source="statewide" data-row-key="race">
+          <thead><tr>
+            <th data-field="race">Race</th>
+            <th data-field="dem">Democrat</th>
+            <th data-field="rep">Republican</th>
+            <th class="r" data-field="dem_pct">Dem</th>
+            <th class="r" data-field="rep_pct">Rep</th>
+            <th class="r" data-field="margin">Margin</th>
+            <th class="r" data-field="reporting">Counted</th>
+            <th data-field="status">Status</th>
+            <th class="wide" data-field="others">Also on ballot</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="tx-page" id="page-senate" role="tabpanel" hidden>
+    <section class="tx-sec">
+      <h2>Senate control</h2>
+      <div class="tx-control" id="sen-control" data-source="chamber_senate"></div>
+    </section>
+    <section class="tx-sec">
+      <h2>Contested seats</h2>
+      <p>Seats with both a Democrat and a Republican on the ballot, closest by 2024 presidential margin first.</p>
+      <div class="tx-board" id="sen-board" data-source="senate"></div>
+    </section>
+    <section class="tx-sec">
+      <h2>Every seat up in 2026</h2>
+      <div class="tx-card">
+        <table class="tx-tbl" id="sen-table" data-source="senate" data-row-key="district">
+          <thead><tr>
+            <th data-field="district">District</th>
+            <th data-field="dem">Democrat</th>
+            <th data-field="rep">Republican</th>
+            <th class="r" data-field="dem_pct">Dem</th>
+            <th class="r" data-field="rep_pct">Rep</th>
+            <th class="r" data-field="margin">Margin</th>
+            <th class="r" data-field="reporting">Counted</th>
+            <th data-field="status">Status</th>
+            <th class="r wide" data-field="margin_r">2024 pres.</th>
+            <th class="wide" data-field="incumbent">Incumbent</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="tx-page" id="page-house" role="tabpanel" hidden>
+    <section class="tx-sec">
+      <h2>House control</h2>
+      <div class="tx-control" id="house-control" data-source="chamber_house"></div>
+    </section>
+    <section class="tx-sec">
+      <h2>Battleground seats</h2>
+      <p>Contested seats where the 2024 presidential margin was within 15 points, closest first.</p>
+      <div class="tx-board" id="house-board" data-source="house"></div>
+    </section>
+    <section class="tx-sec">
+      <h2>All 180 districts</h2>
+      <div class="tx-tools">
+        <input type="search" id="house-q" placeholder="Search district, candidate or note" aria-label="Search districts">
+        <button id="house-f-contested" aria-pressed="false">Contested only</button>
+        <button id="house-f-open" aria-pressed="false">Open seats</button>
+        <button id="house-f-close" aria-pressed="false">Within 15 pts</button>
+        <span id="house-count" class="tx-meta"></span>
+      </div>
+      <div class="tx-card tx-scroll">
+        <table class="tx-tbl" id="house-table" data-source="house" data-row-key="district">
+          <thead><tr>
+            <th data-field="district">District</th>
+            <th data-field="dem">Democrat</th>
+            <th data-field="rep">Republican</th>
+            <th class="r" data-field="dem_pct">Dem</th>
+            <th class="r" data-field="rep_pct">Rep</th>
+            <th class="r" data-field="margin">Margin</th>
+            <th class="r" data-field="reporting">Counted</th>
+            <th data-field="status">Status</th>
+            <th class="r wide" data-field="margin_r">2024 pres.</th>
+            <th class="wide" data-field="incumbent">Incumbent</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <div class="tx-page" id="page-ev" role="tabpanel" hidden>
+    <section class="tx-sec">
+      <h2>Early vote and mail ballots</h2>
+      <ul class="tx-notes">
+        <li>This tracks turnout only; Georgia has no party registration</li>
+        <li>Comparisons line up with the same day in 2022 and 2024</li>
+        <li>Day 1 in every year includes mail ballots received before early voting opened</li>
+        <li>Early voting runs October 13 to 30; mail ballots count until polls close on Election Day</li>
+        <li>Data is updated as it becomes available</li>
+      </ul>
+      <div class="tx-evbar">
+        <div class="tx-seg" role="group" aria-label="Show totals as"><button id="ev-m-cum" aria-pressed="true">Cumulative</button><button id="ev-m-day" aria-pressed="false">Each day</button></div>
+        <div class="tx-daypick" id="ev-days" role="group" aria-label="Early voting day"></div>
+      </div>
+      <div class="tx-evtiles" id="ev-tiles" data-source="ga_ev_counties"></div>
+    </section>
+    <section class="tx-sec">
+      <h2 id="ev-chart-h">Ballots by day of early voting, against 2022 and 2024</h2>
+      <div class="tx-card" id="ev-chart" data-source="ga_ev_days" style="min-height:14rem;position:relative"></div>
+      <div class="tx-card tx-scroll" style="margin-top:var(--cds-gap-sm)">
+        <table class="tx-tbl" id="ev-daytable" data-source="ga_ev_days">
+          <thead><tr>
+            <th>Day</th><th>2026 date</th><th class="r">2026<br>ballots</th><th class="r">2022<br>same day</th><th class="r">2024<br>same day</th><th class="r">2026<br>vs 2022</th><th class="r">2026<br>vs 2024</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="tx-sec">
+      <h2 id="ev-county-h">By county</h2>
+      <div class="tx-tools"><input type="search" id="ev-q" placeholder="Search county" aria-label="Search county"><span id="ev-count" class="tx-meta"></span></div>
+      <div class="tx-card tx-scroll">
+        <table class="tx-tbl" id="ev-table" data-source="ga_ev_county_days" data-row-key="county">
+          <thead><tr>
+            <th>County</th>
+            <th class="r">Ballots<br>cast</th>
+            <th class="r wide">In<br>person</th>
+            <th class="r wide">Mail</th>
+            <th class="r" id="ev-th-t">Turnout</th>
+            <th class="r" id="ev-th-22">2022 turnout,<br>same day</th>
+            <th class="r" id="ev-th-24">2024 turnout,<br>same day</th>
+            <th class="r">Ballots<br>vs 2022</th>
+            <th class="r">Ballots<br>vs 2024</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const EVD = 19; // longest early vote window being compared (2022 ran 19 days)
+
+const txControl = (rows, base) => {
+  // base: seats not on the ballot this year {D, R}; rows: seats up.
+  const s = { total: base.total, majority: base.majority, d_hold: base.D || 0, r_hold: base.R || 0, d_won: 0, r_won: 0, d_lead: 0, r_lead: 0, d_safe: 0, r_safe: 0, pending: 0 };
+  for (const x of rows) {
+    const contested = x.contested !== false && x.dem && x.rep;
+    if (x.status === 'Called') { if (x.leader === 'D') s.d_won++; else if (x.leader === 'R') s.r_won++; else s.pending++; }
+    else if (!contested && (x.dem || x.rep)) { if (x.dem && !x.rep) s.d_safe++; else s.r_safe++; }
+    else if (x.leader === 'D') s.d_lead++;
+    else if (x.leader === 'R') s.r_lead++;
+    else s.pending++;
+  }
+  s.d_proj = s.d_hold + s.d_safe + s.d_won + s.d_lead;
+  s.r_proj = s.r_hold + s.r_safe + s.r_won + s.r_lead;
+  return [s];
+};
+dash.calc('chamber_senate', {
+  inputs: ['senate', 'chambers'],
+  title: 'Senate seat count',
+  description: 'Uncontested seats, called seats and current leads across all 56 districts.',
+  fn: (senate, chambers) => { const c = chambers.find((r) => r.chamber === 'Senate') || {}; return txControl(senate, { total: c.total, majority: c.majority, D: c.holdover_d, R: c.holdover_r }); },
+});
+dash.calc('chamber_house', {
+  inputs: ['house', 'chambers'],
+  title: 'House seat count',
+  description: 'Uncontested seats, called seats and current leads across all 180 districts.',
+  fn: (house, chambers) => { const c = chambers.find((r) => r.chamber === 'House') || {}; return txControl(house, { total: c.total, majority: c.majority, D: 0, R: 0 }); },
+});
+
+(() => {
+  const num = d3.format(',');
+  const pct = (v) => (v == null || v === '' ? '—' : Number(v).toFixed(1) + '%');
+  const sgn = (v) => (v == null || v === '' ? '—' : (Number(v) > 0 ? 'D+' : Number(v) < 0 ? 'R+' : '') + Math.abs(Number(v)).toFixed(1));
+  const presTxt = (m) => (m == null || m === '' ? '—' : (Number(m) > 0 ? 'Trump +' : 'Harris +') + Math.abs(Number(m)).toFixed(1));
+  const last = (n) => String(n || '').split(' ').filter((w) => !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(w)).slice(-1)[0] || '';
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const state = (r) => r.status === 'Called' ? (r.leader === 'D' ? 'won-d' : 'won-r') : (r.status === 'Counting' || r.status === 'Too close to call' ? 'counting' : '');
+  const shortStatus = (r) => {
+    if (r.status === 'Called') return (r.leader === 'D' ? 'D win' : 'R win');
+    if (r.status === 'Too close to call') return 'Too close';
+    if (r.status === 'Counting') return r.reporting != null && r.reporting !== '' ? Number(r.reporting).toFixed(0) + '% in' : 'Counting';
+    if (r.contested === false) return 'Uncontested';
+    return '';
+  };
+  const winCls = (r, side) => (r.status === 'Called' && r.leader === side ? (side === 'D' ? 'w-d' : 'w-r') : '');
+  const mini = (r) => { const b = el('div', 'tx-mini'); const d = el('span', 'dv'); d.style.width = (Number(r.dem_pct) || 0) + '%'; const g = el('span', 'rv'); g.style.width = (Number(r.rep_pct) || 0) + '%'; b.append(d, g); return b; };
+  const remaining = (r) => {
+    if (r.remaining_reported != null && r.remaining_reported !== '') return Number(r.remaining_reported);
+    const c = (Number(r.dem_votes) || 0) + (Number(r.rep_votes) || 0) + (Number(r.other_votes) || 0);
+    const rep = Number(r.reporting);
+    return c > 0 && rep > 0 && rep < 100 ? Math.round(c / (rep / 100) - c) : null;
+  };
+  const tile = (r, label, sub) => {
+    const t = el('div', 'tx-t'); const s = state(r); if (s.startsWith('won')) t.classList.add(s);
+    const r1 = el('div', 'row1'); r1.append(el('span', 'd', label), el('span', 'st ' + s, shortStatus(r)));
+    const names = el('div', 'names'); names.append(el('span', winCls(r, 'D'), r.dem ? last(r.dem) : '(no D)'), el('span', winCls(r, 'R'), r.rep ? last(r.rep) : '(no R)'));
+    const nums = el('div', 'nums'); nums.append(el('span', 'dv', pct(r.dem_pct)), el('span', 'rv', pct(r.rep_pct)));
+    const left = remaining(r);
+    t.append(r1, names, nums, mini(r), el('div', 'sub', left > 0 ? '~' + num(left) + ' left to count' : sub || ''));
+    return t;
+  };
+  const row = (r, key, extra) => {
+    const tr = el('tr'); const st = el('td'); st.append(el('span', 'tx-pill ' + state(r), r.contested === false && r.status === 'Pre-election' ? 'Uncontested' : r.status));
+    tr.append(el('td', 'dist', key), el('td', winCls(r, 'D') || null, r.dem || '—'), el('td', winCls(r, 'R') || null, r.rep || '—'),
+      el('td', 'r dv', pct(r.dem_pct)), el('td', 'r rv', pct(r.rep_pct)), el('td', 'r', sgn(r.margin)),
+      el('td', 'r', r.reporting == null || r.reporting === '' ? '—' : Number(r.reporting).toFixed(0) + '%'), st, ...extra);
+    return tr;
+  };
+  const control = (box, c, label) => {
+    box.replaceChildren();
+    if (!c) return;
+    const t = c.total || 0;
+    const nums = el('div', 'nums');
+    const dBox = el('div'); dBox.append(el('div', 'big d', String(c.d_proj)), el('div', 'lbl', 'Democrats, won or leading'));
+    const mid = el('div', 'lbl', c.majority + ' of ' + t + ' for a majority');
+    const rBox = el('div'); rBox.style.textAlign = 'right'; rBox.append(el('div', 'big r', String(c.r_proj)), el('div', 'lbl', 'Republicans, won or leading'));
+    nums.append(dBox, mid, rBox);
+    const bar = el('div', 'tx-seatbar'); bar.setAttribute('role', 'img'); bar.setAttribute('aria-label', label + ': Democrats ' + c.d_proj + ', Republicans ' + c.r_proj + ' of ' + t);
+    const seg = (cls, n) => { const s = el('span', cls); s.style.width = (t ? (n / t) * 100 : 0) + '%'; return s; };
+    bar.append(seg('dw', c.d_hold + c.d_safe + c.d_won), seg('dl', c.d_lead), seg('rl', c.r_lead), seg('rw', c.r_hold + c.r_safe + c.r_won), el('span', 'mid'));
+    const lg = el('div', 'tx-legend');
+    const item = (color, txt) => { const s = el('span'); const i = el('i'); i.style.background = color; s.append(i, document.createTextNode(txt)); return s; };
+    lg.append(
+      item('var(--tx-d)', 'D ' + (c.d_hold ? c.d_hold + ' not up, ' : '') + c.d_safe + ' uncontested, ' + c.d_won + ' won'),
+      item('#3F6DB5', 'D leading ' + c.d_lead),
+      item('#A84A44', 'R leading ' + c.r_lead),
+      item('var(--tx-r)', 'R ' + (c.r_hold ? c.r_hold + ' not up, ' : '') + c.r_safe + ' uncontested, ' + c.r_won + ' won'),
+      el('span', null, c.pending + ' not yet reporting'));
+    box.append(nums, bar, lg);
+  };
+
+  const pages = { statewide: document.getElementById('page-statewide'), senate: document.getElementById('page-senate'), house: document.getElementById('page-house'), ev: document.getElementById('page-ev') };
+  const tabs = { statewide: document.getElementById('tab-statewide'), senate: document.getElementById('tab-senate'), house: document.getElementById('tab-house'), ev: document.getElementById('tab-ev') };
+  let current = 'statewide';
+  const show = (name) => { current = name; for (const k in pages) { pages[k].hidden = k !== name; tabs[k].setAttribute('aria-selected', String(k === name)); } dash.setLink(name); draw(); };
+  for (const k in tabs) tabs[k].addEventListener('click', () => show(k));
+  // until Election Day (3 Nov 2026, Central), the early vote tab comes first and opens by default
+  if (Date.now() < Date.parse('2026-11-03T05:00:00Z')) {
+    tabs.ev.parentNode.insertBefore(tabs.ev, tabs.statewide);
+    current = 'ev';
+    for (const k in pages) { pages[k].hidden = k !== 'ev'; tabs[k].setAttribute('aria-selected', String(k === 'ev')); }
+  }
+
+  const filt = { contested: false, open: false, close: false, q: '' };
+  let evq = ''; let evMode = 'cum'; let evDay = null;
+  for (const [id, m] of [['ev-m-cum', 'cum'], ['ev-m-day', 'day']]) document.getElementById(id).addEventListener('click', () => { evMode = m; document.getElementById('ev-m-cum').setAttribute('aria-pressed', String(m === 'cum')); document.getElementById('ev-m-day').setAttribute('aria-pressed', String(m === 'day')); draw(); });
+  const evIn = document.getElementById('ev-q');
+  evIn.addEventListener('input', () => { evq = evIn.value.trim().toLowerCase(); draw(); });
+  const evTile = (lbl, val) => { const t = el('div', 'tx-evtile'); t.append(el('span', 'lbl', lbl), el('span', 'num', val)); return t; };
+  const drawEv = () => {
+    const c = dash.data('ga_ev_counties'); const dd = dash.data('ga_ev_days'); const hs = dash.data('ga_ev_history'); const cdd = dash.data('ga_ev_county_days');
+    const H0 = hs.status === 'ok' ? hs.data : [];
+    const tiles = document.getElementById('ev-tiles'); const tb = document.querySelector('#ev-table tbody'); const chart = document.getElementById('ev-chart'); const dtb = document.querySelector('#ev-daytable tbody'); const picker = document.getElementById('ev-days');
+    const n = (v) => (v == null || v === '' || Number.isNaN(v) ? '—' : num(Number(v)));
+    const pct = (v) => (v == null ? '—' : Number(v).toFixed(1) + '%');
+    const sgn = (v) => (v == null || !Number.isFinite(v) ? '—' : (v > 0 ? '+' : '') + v.toFixed(1) + '%');
+    const daily = evMode === 'day';
+    const st = c.status === 'ok' ? c.data.find((r) => r.county === 'STATEWIDE') : null;
+    const latestDay = st ? Number(st.day) : null;
+    // 2026 statewide by day
+    const days26 = (dd.status === 'ok' ? dd.data : []).filter((r) => r.total != null).map((r) => ({ day: Number(r.day), date: r.date, in_person: Number(r.in_person) || 0, mail: Number(r.mail) || 0, total: Number(r.total), partial: !!r.partial, posted: r.counties_posted })).sort((a, b) => a.day - b.day);
+    const avail = days26.map((d) => d.day);
+    // default to the most recent day that has new ballots counted (skip a day the state has opened but not filled)
+    const withNew = days26.filter((d, i) => i === 0 || d.total > days26[i - 1].total).map((d) => d.day);
+    const newest = withNew.length ? withNew[withNew.length - 1] : (avail[avail.length - 1] || latestDay);
+    if (evDay == null || !avail.includes(evDay)) evDay = newest;
+    const D = evDay;
+    // day chips
+    picker.replaceChildren(el('span', 'lbl', 'Day:'), ...avail.map((dv) => { const r = days26.find((x) => x.day === dv); const b = el('button', null, 'Day ' + dv + ' · ' + new Date(r.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })); b.setAttribute('aria-pressed', String(dv === D)); b.addEventListener('click', () => { evDay = dv; draw(); }); return b; }));
+    // history helpers
+    const hrow = (yr, county, day) => H0.find((r) => r.year === yr && r.day === day && String(r.county).toUpperCase() === String(county).toUpperCase()) || null;
+    const hval = (yr, county, day) => { const a = hrow(yr, county, day); if (!a) return null; if (!daily) return a; const b = day > 1 ? hrow(yr, county, day - 1) : null; return { ...a, total: a.total - (b ? b.total : 0), in_person: a.in_person - (b ? b.in_person : 0), mail: a.mail - (b ? b.mail : 0) }; };
+    // 2026 county rows for day D (from county-by-day data, else the latest snapshot)
+    // where a county gives only a total and mail, in person is the difference
+    const fillIp = (r) => (r && r.in_person == null && r.total != null && r.mail != null ? { ...r, in_person: Number(r.total) - Number(r.mail) } : r);
+    const CD = (cdd.status === 'ok' ? cdd.data : []).map(fillIp);
+    const crow = (county, day) => CD.find((r) => r.day === day && r.county === county) || null;
+    let base = CD.filter((r) => r.day === D);
+    if (!base.length && c.status === 'ok' && D === latestDay) base = c.data.filter((r) => r.county !== 'STATEWIDE').map(fillIp);
+    const mailMiss = (r, day) => { if (!r) return false; const a = hrow(2022, r.county, day), b = hrow(2024, r.county, day); const ref = Math.max(a ? Number(a.mail) || 0 : 0, b ? Number(b.mail) || 0 : 0); return ref >= 100 && (r.mail == null || Number(r.mail) < 0.3 * ref); };
+    const full = (r, day) => { if (!r) return false; if (r.county_report) return true; if (r.posted_day === false) return false; const b = hrow(2022, r.county, day); return !b || !b.total || Number(r.total) >= 0.3 * b.total; };
+    const rows26 = base.map((r) => { const mm = mailMiss(r, D); if (!daily) return { ...r, mm, ok: full(r, D) }; const p = D > 1 ? crow(r.county, D - 1) : null; if ((D > 1 && !p) || (r.posted_day === false && !r.county_report)) return { ...r, mm, total: null, in_person: null, mail: null, ok: false }; const sub = (k) => (r[k] == null || (p && p[k] == null) ? null : Number(r[k]) - (p ? Number(p[k]) : 0)); const t = sub('total'); const h = hval(2022, r.county, D); return { ...r, mm: mm || (D > 1 && mailMiss(p, D - 1)), total: t, in_person: sub('in_person'), mail: sub('mail'), ok: full(r, D) && (D === 1 || full(p, D - 1)) && (!h || !h.total || (t != null && t >= 0.25 * h.total)) }; });
+    const isPartial = !!(days26.find((x) => x.day === D) || {}).partial;
+    const okRows = rows26.filter((r) => r.ok && r.total != null);
+    const cmpPair = (r, h) => (r.mm ? [r.in_person == null ? null : Number(r.in_person), h.in_person] : [r.total == null ? null : Number(r.total), h.total]);
+    const repChg = (yr) => { let a = 0, b = 0, n = 0; for (const r of okRows) { const h = hval(yr, r.county, D); if (!h || !h.total) continue; const [x, y] = cmpPair(r, h); if (x == null || !y) continue; a += x; b += y; n++; } return b ? { p: (a - b) / b * 100, a, b, n } : null; };
+    const chg = (r, yr) => { const b = hval(yr, r.county, D); if (!r.ok || !b || !b.total || r.total == null) return null; const [x, y] = cmpPair(r, b); if (x == null || !y) return null; return (x - y) / y * 100; };
+    const nMM = okRows.filter((r) => r.mm).length;
+    // statewide for day D
+    const sw = (() => { const a = days26.find((x) => x.day === D); if (!a) return null; if (!daily) return a; const p = days26.find((x) => x.day === D - 1); if (D > 1 && !p) return null; return { ...a, total: a.total - (p ? p.total : 0), in_person: a.in_person - (p ? p.in_person : 0), mail: a.mail - (p ? p.mail : 0) }; })();
+    const swchg = (yr) => { if (isPartial || nMM) { const x = repChg(yr); return x ? x.p : null; } const b = hval(yr, 'STATEWIDE', D); return sw && b && b.total ? (sw.total - b.total) / b.total * 100 : null; };
+    const dateLbl = (() => { const a = days26.find((x) => x.day === D); return a ? 'day ' + D + ', ' + new Date(a.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'; })();
+    const mlbl = daily ? 'Day ' + D + ' alone' : 'Through day ' + D;
+    if (!days26.length) { tiles.replaceChildren(el('div', 'tx-empty', c.status === 'loading' ? '' : 'Waiting for the first early vote numbers.')); tb.replaceChildren(); dtb.replaceChildren(); document.getElementById('ev-count').textContent = ''; chart.replaceChildren(); return; }
+    const reg = st ? Number(st.registered) : null;
+    const b22 = hval(2022, 'STATEWIDE', D), b24 = hval(2024, 'STATEWIDE', D);
+    tiles.replaceChildren(
+      evTile(mlbl + ': ballots (at least)', sw ? n(sw.total) : '—'),
+      evTile(daily ? 'In person, mail' : 'Turnout of registered voters', daily ? (sw ? n(sw.in_person) + ', ' + n(sw.mail) : '—') : (sw && reg ? pct(sw.total / reg * 100) : '—')),
+      evTile(isPartial ? 'vs 2022, same day (' + (repChg(2022) || { n: 0 }).n + ' counties posted)' : 'vs 2022, same day', sgn(swchg(2022)) + (!isPartial && !nMM && b22 ? ' (' + num(b22.total) + ')' : '')),
+      evTile(isPartial ? 'vs 2024, same day (' + (repChg(2024) || { n: 0 }).n + ' counties posted)' : 'vs 2024, same day', sgn(swchg(2024)) + (!isPartial && !nMM && b24 ? ' (' + num(b24.total) + ')' : '')),
+      evTile('Showing', dateLbl + (isPartial ? ', state still posting' : '') + (D !== latestDay ? ' (latest: day ' + latestDay + ')' : '')));
+    // statewide by-day table (12 rows)
+    const series = (yr) => { const out = {}; for (let i = 1; i <= 12; i++) { const v = hval(yr, 'STATEWIDE', i); if (v) out[i] = v.total; } return out; };
+    const s22 = series(2022), s24 = series(2024);
+    const s26 = {}; days26.forEach((d) => { const p = days26.find((x) => x.day === d.day - 1); s26[d.day] = daily ? (d.day === 1 ? d.total : p ? d.total - p.total : null) : d.total; });
+    const d26 = (i) => { const a = days26.find((x) => x.day === i); if (a) return new Date(a.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); const t = new Date(2026, 9, 18 + i); return t.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); };
+    dtb.replaceChildren(...d3.range(1, EVD + 1).map((i) => { const tr = el('tr'); if (i === D) tr.style.background = 'rgba(242,196,109,0.14)'; const v = s26[i]; const pr = !!(days26.find((x) => x.day === i) || {}).partial; const cmp = (b) => (v != null && b && !pr ? sgn((v - b) / b * 100) : (pr ? 'posting' : '—')); tr.append(el('td', 'dist', 'Day ' + i), el('td', null, d26(i) + (pr ? ' (partial)' : '')), el('td', 'r', n(v)), el('td', 'r muted', n(s22[i])), el('td', 'r muted', n(s24[i])), el('td', 'r', cmp(s22[i])), el('td', 'r', cmp(s24[i]))); return tr; }));
+    document.getElementById('ev-chart-h').textContent = (daily ? 'Ballots cast each day' : 'Cumulative ballots') + ' by day of early voting, against 2022 and 2024';
+    // county table
+    document.getElementById('ev-county-h').textContent = 'By county, ' + (daily ? 'day ' + D + ' alone' : 'through day ' + D);
+    document.getElementById('ev-table').classList.toggle('daily', daily);
+    document.getElementById('ev-th-22').innerHTML = daily ? '2022<br>same day' : '2022 turnout,<br>same day';
+    document.getElementById('ev-th-24').innerHTML = daily ? '2024<br>same day' : '2024 turnout,<br>same day';
+    const tp = (h) => (h && h.registered ? h.total / h.registered * 100 : null);
+    const rows = rows26.filter((r) => !evq || String(r.county).toLowerCase().includes(evq)).sort((a, b) => Number(b.total || 0) - Number(a.total || 0));
+    const lag = rows26.filter((r) => !r.ok).length;
+    const rows2 = rows; rows2.sort((a, b) => (a.total == null) - (b.total == null) || Number(b.total || 0) - Number(a.total || 0));
+    const mmAll = rows26.filter((r) => r.mm).length;
+    document.getElementById('ev-count').textContent = rows.length + ' counties' + (lag ? '; ' + lag + (daily ? ' have not posted this day yet' : ' still posting (no comparison yet)') : '') + (mmAll ? '; ' + mmAll + ' with mail not yet reported to the state (compared on in-person votes)' : '');
+    tb.replaceChildren(...rows.map((r) => { const tr = el('tr'); const h2 = hval(2022, r.county, D), h4 = hval(2024, r.county, D); tr.append(el('td', 'dist', r.county), el('td', 'r', n(r.total)), el('td', 'r wide', n(r.in_person)), (() => { const td = el('td', 'r wide' + (r.mm ? ' muted' : ''), r.mm ? 'not reported' : n(r.mail)); if (r.mm) td.title = 'This county has not yet reported its mail ballots to the state'; return td; })(), el('td', 'r', daily ? '' : (r.registered ? pct(Number(r.total) / Number(r.registered) * 100) : pct(r.turnout_pct))), el('td', 'r muted', daily ? n(h2 && h2.total) : pct(tp(h2))), el('td', 'r muted', daily ? n(h4 && h4.total) : pct(tp(h4))), el('td', 'r', sgn(chg(r, 2022))), el('td', 'r', sgn(chg(r, 2024)))); return tr; }));
+    // chart
+    chart.replaceChildren();
+    const line = (yr) => d3.range(1, EVD + 1).map((i) => ({ day: i, total: (yr === 2022 ? s22 : s24)[i] })).filter((d) => d.total != null);
+    const l22 = line(2022), l24 = line(2024);
+    const cur = days26.map((d) => { const p = days26.find((x) => x.day === d.day - 1); if (!daily) return d; if (d.day > 1 && !p) return null; return { ...d, total: d.total - (p ? p.total : 0), mail: d.mail - (p ? p.mail : 0), in_person: d.in_person - (p ? p.in_person : 0) }; }).filter(Boolean);
+    const W = chart.clientWidth - 24, H = 240, m = { t: 12, r: 12, b: 26, l: 12 };
+    const fmtY = d3.format('.2s'); const dayList = d3.range(1, EVD + 1);
+    const x = d3.scaleBand(dayList, [0, 1]).padding(0.25);
+    const maxV = d3.max([...cur.map((d) => d.total), ...l22.map((d) => d.total), ...l24.map((d) => d.total)]) || 1;
+    const y = d3.scaleLinear([0, maxV], [H - m.b, m.t]).nice();
+    const svg = d3.select(chart).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const ticks = y.ticks(4); let lw = 0; const yt = svg.append('g');
+    ticks.forEach((t) => { const tt = yt.append('text').attr('font-size', 11).text(fmtY(t)); lw = Math.max(lw, tt.node().getComputedTextLength()); tt.remove(); });
+    m.l = lw + 10; x.range([m.l, W - m.r]);
+    ticks.forEach((t) => { svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(t)).attr('y2', y(t)).attr('stroke', 'rgba(200,210,255,0.14)'); svg.append('text').attr('x', m.l - 6).attr('y', y(t) + 4).attr('text-anchor', 'end').attr('font-size', 11).attr('fill', '#9AA6C8').text(fmtY(t)); });
+    svg.append('rect').attr('x', x(D) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', m.t).attr('height', H - m.t - m.b).attr('fill', 'rgba(242,196,109,0.14)');
+    const g = svg.selectAll('g.bar').data(cur).enter().append('g').attr('opacity', (d) => (d.partial ? 0.4 : 1));
+    g.append('rect').attr('x', (d) => x(d.day)).attr('width', x.bandwidth()).attr('y', (d) => y(Math.max(0, d.total - d.mail))).attr('height', (d) => y(0) - y(Math.max(0, d.total - d.mail))).attr('fill', '#F2C46D').attr('rx', 2);
+    g.append('rect').attr('x', (d) => x(d.day)).attr('width', x.bandwidth()).attr('y', (d) => y(d.total)).attr('height', (d) => Math.max(0, y(Math.max(0, d.total - d.mail)) - y(d.total))).attr('fill', '#9C8CFF').attr('rx', 2);
+    const cx = (d) => x(d.day) + x.bandwidth() / 2;
+    const drawLine = (pts, color, dash) => { if (!pts.length) return; svg.append('path').attr('d', d3.line().x(cx).y((d) => y(d.total))(pts)).attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2).attr('stroke-dasharray', dash || null); svg.selectAll(null).data(pts).enter().append('circle').attr('cx', cx).attr('cy', (d) => y(d.total)).attr('r', 2.5).attr('fill', color); };
+    drawLine(l22, '#9AA6C8', '5 3'); drawLine(l24, '#E8ECFF');
+    dayList.forEach((dv) => svg.append('text').attr('x', x(dv) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', '#9AA6C8').text(W < 520 && dv % 2 === 0 ? '' : 'Day ' + dv));
+    const tip = el('div', 'tx-tip'); tip.hidden = true; chart.append(tip);
+    svg.append('g').selectAll('rect').data(dayList).enter().append('rect').attr('x', (d) => x(d) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', m.t).attr('height', H - m.t - m.b).attr('fill', 'transparent').style('cursor', (d) => (avail.includes(d) ? 'pointer' : 'default'))
+      .on('click', (ev, dv) => { if (avail.includes(dv)) { evDay = dv; draw(); } })
+      .on('mousemove', (ev, dv) => { const a = cur.find((d) => d.day === dv); const parts = ['Day ' + dv]; if (a) parts.push('2026: ' + num(a.total)); if (s22[dv] != null) parts.push('2022: ' + num(s22[dv])); if (s24[dv] != null) parts.push('2024: ' + num(s24[dv])); tip.hidden = false; tip.textContent = parts.join(' · '); const r = chart.getBoundingClientRect(); let lx = ev.clientX - r.left + 10; if (lx > r.width - 260) lx = r.width - 260; tip.style.left = Math.max(4, lx) + 'px'; tip.style.top = (ev.clientY - r.top - 30) + 'px'; })
+      .on('mouseleave', () => { tip.hidden = true; });
+    const lg = el('div', 'tx-legend'); const it = (cc, t) => { const sp = el('span'); const i = el('i'); i.style.background = cc; sp.append(i, document.createTextNode(t)); return sp; };
+    const ln = (cc, t, dash) => { const sp = el('span'); const i = el('i'); i.style.cssText = 'background:none;height:0;align-self:center;border-top:2px ' + (dash ? 'dashed ' : 'solid ') + cc; sp.append(i, document.createTextNode(t)); return sp; };
+    lg.append(it('#F2C46D', '2026 in person'), it('#9C8CFF', '2026 mail'), ln('#9AA6C8', '2022', true), ln('#E8ECFF', '2024')); chart.append(lg);
+  };
+  const q = document.getElementById('house-q');
+  q.addEventListener('input', () => { filt.q = q.value.trim().toLowerCase(); draw(); });
+  for (const k of ['contested', 'open', 'close']) {
+    const b = document.getElementById('house-f-' + k);
+    b.addEventListener('click', () => { filt[k] = !filt[k]; b.setAttribute('aria-pressed', String(filt[k])); draw(); });
+  }
+
+  const latest = () => {
+    let m = '';
+    for (const id of ['statewide', 'senate', 'house']) { const d = dash.data(id); if (d.status === 'ok') for (const r of d.data) if (r.as_of && r.as_of > m) m = r.as_of; }
+    if (!m) return '—';
+    const dt = new Date(m);
+    return isNaN(dt) ? m : 'Updated ' + dt.toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET';
+  };
+
+  function draw() {
+    document.getElementById('tx-updated').textContent = latest();
+    if (current === 'ev') { drawEv(); return; }
+    if (current === 'statewide') {
+      const d = dash.data('statewide'); const board = document.getElementById('sw-board'); const tb = document.querySelector('#sw-table tbody');
+      if (d.status !== 'ok') { board.replaceChildren(el('div', 'tx-empty', d.status === 'error' ? 'Statewide results failed to load.' : '')); tb.replaceChildren(); return; }
+      const rows = d.data.slice().sort((a, b) => Number(a.order) - Number(b.order));
+      board.replaceChildren(...rows.filter((r) => r.group !== 'Judicial').map((r) => tile(r, r.race, r.open_seat ? 'Open seat' : r.incumbent ? 'Inc. ' + last(r.incumbent) : '')));
+      tb.replaceChildren(...rows.map((r) => row(r, r.race, [el('td', 'wide muted', r.others || '')])));
+    } else if (current === 'senate') {
+      const d = dash.data('senate'); const c = dash.data('chamber_senate');
+      control(document.getElementById('sen-control'), c.status === 'ok' ? c.data[0] : null, 'Georgia Senate');
+      const board = document.getElementById('sen-board'); const tb = document.querySelector('#sen-table tbody');
+      if (d.status !== 'ok') { board.replaceChildren(); tb.replaceChildren(); return; }
+      const rows = d.data.slice().sort((a, b) => Number(a.number) - Number(b.number));
+      const contested = rows.filter((r) => r.contested !== false && r.dem && r.rep).sort((a, b) => Math.abs(Number(a.margin_r ?? 99)) - Math.abs(Number(b.margin_r ?? 99)));
+      board.replaceChildren(...(contested.length ? contested.map((r) => tile(r, r.district, presTxt(r.margin_r))) : [el('div', 'tx-empty', 'No contested seats listed.')]));
+      tb.replaceChildren(...rows.map((r) => row(r, r.district, [el('td', 'r wide muted', presTxt(r.margin_r)), el('td', 'wide muted', r.incumbent ? r.incumbent + ' (' + (r.incumbent_party || '') + ')' + (r.incumbent_running === false ? ', retiring' : '') : '')])));
+    } else {
+      const d = dash.data('house'); const c = dash.data('chamber_house');
+      control(document.getElementById('house-control'), c.status === 'ok' ? c.data[0] : null, 'Georgia House');
+      const board = document.getElementById('house-board'); const tb = document.querySelector('#house-table tbody');
+      if (d.status !== 'ok') { board.replaceChildren(); tb.replaceChildren(); return; }
+      const rows = d.data.slice().sort((a, b) => Number(a.number) - Number(b.number));
+      const isContested = (r) => r.contested !== false && r.dem && r.rep;
+      const close = rows.filter((r) => isContested(r) && r.margin_r != null && Math.abs(Number(r.margin_r)) <= 15).sort((a, b) => Math.abs(Number(a.margin_r)) - Math.abs(Number(b.margin_r)));
+      board.replaceChildren(...(close.length ? close.map((r) => tile(r, r.district, presTxt(r.margin_r) + (r.open_seat ? ', open' : ''))) : [el('div', 'tx-empty', 'No seats within 15 points listed.')]));
+      const shown = rows.filter((r) => (!filt.contested || isContested(r)) && (!filt.open || r.open_seat) && (!filt.close || (r.margin_r != null && Math.abs(Number(r.margin_r)) <= 15))
+        && (!filt.q || [r.district, r.dem, r.rep, r.incumbent, r.note, r.others].join(' ').toLowerCase().includes(filt.q)));
+      document.getElementById('house-count').textContent = shown.length + ' of ' + rows.length + ' districts';
+      tb.replaceChildren(...shown.map((r) => row(r, r.district, [el('td', 'r wide muted', presTxt(r.margin_r)), el('td', 'wide muted', r.incumbent ? r.incumbent + ' (' + (r.incumbent_party || '') + ')' + (r.incumbent_running === false ? ', not running' : '') : 'Vacant')])));
+    }
+  }
+
+  dash.onData(draw);
+  let jumped = false;
+  dash.onData(() => { if (jumped) return; jumped = true; const h = location.hash.slice(1); if (pages[h]) show(h); });
+})();
+</script>
