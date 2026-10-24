@@ -9,7 +9,7 @@ raw, outdir = sys.argv[1], sys.argv[2]
 prev_dir = sys.argv[3] if len(sys.argv) > 3 else None
 g = json.load(open(raw)); C = g['counties']
 D0 = dt.date(2026, 10, 12); H0 = dt.date(2022, 10, 17)
-maxd = dt.date.fromisoformat(g['max_vote_day']); last_day = (maxd - D0).days
+maxd = dt.date.fromisoformat(g['max_vote_day']); last_day = min((maxd - D0).days, 18)  # early voting ends 30 Oct (day 18)
 def at(c, d, k): return next((r[k] for r in c['rows'] if r['dt'] == d.isoformat()), None)
 prev = {}
 if prev_dir and os.path.exists(os.path.join(prev_dir, 'ga_ev_county_days.json')):
@@ -56,6 +56,13 @@ for k in range(1, 19):
         hist.append({'year': 2022, 'day': k, 'date': (H0 + dt.timedelta(days=k)).isoformat(), 'county': c['county'], 'registered': None, 'in_person': None, 'mail': None, 'total': t})
     if ok: hist.append({'year': 2022, 'day': k, 'date': (H0 + dt.timedelta(days=k)).isoformat(), 'county': 'STATEWIDE', 'registered': None, 'in_person': None, 'mail': None, 'total': s})
 if os.path.exists(hist_path): hist += json.load(open(hist_path))
+elif prev_dir and os.path.exists(os.path.join(prev_dir, 'ga_ev_history.json')):
+    hist += [r for r in json.load(open(os.path.join(prev_dir, 'ga_ev_history.json'))) if r.get('year') != 2022]  # keep 2024 rows loaded from the state file
+    # keep a 2022 method split loaded from the state file when the total still matches
+    old22 = {(r['day'], r['county']): r for r in json.load(open(os.path.join(prev_dir, 'ga_ev_history.json'))) if r.get('year') == 2022 and r.get('mail') is not None}
+    for r in hist:
+        o = old22.get((r['day'], r['county'])) if r['year'] == 2022 else None
+        if o and o['total'] == r['total']: r.update(in_person=o['in_person'], mail=o['mail'], registered=o.get('registered'))
 os.makedirs(outdir, exist_ok=True)
 for n, v in [('ga_ev_counties', counties), ('ga_ev_days', days), ('ga_ev_county_days', cd), ('ga_ev_history', hist)]:
     json.dump(v, open(os.path.join(outdir, n + '.json'), 'w'), separators=(',', ':'))
